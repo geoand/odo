@@ -2,6 +2,8 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/c-bata/go-prompt"
+	"github.com/redhat-developer/odo/pkg/occlient"
 	"os"
 	"path/filepath"
 	"strings"
@@ -58,7 +60,7 @@ A full list of component types that can be deployed is available using: 'odo cat
   # For more examples, visit: https://github.com/redhat-developer/odo/blob/master/docs/examples.md
   odo create python --git https://github.com/openshift/django-ex.git
 	`,
-	Args: cobra.RangeArgs(1, 2),
+	Args: cobra.RangeArgs(0, 2),
 	Run: func(cmd *cobra.Command, args []string) {
 
 		stdout := color.Output
@@ -86,7 +88,18 @@ A full list of component types that can be deployed is available using: 'odo cat
 			os.Exit(1)
 		}
 
-		componentImageName, componentType, componentName, componentVersion := util.ParseCreateCmdArgs(args)
+		var selectedComponent = ""
+		if len(args) == 0 {
+			fmt.Println("Please select a component (use 'Tab' to see and move through options - 'Enter' to select)")
+			selectedComponent = prompt.Input( ">>>",
+				componentCompleter,
+				prompt.OptionInputTextColor(prompt.Yellow),
+				prompt.OptionTitle("Select component type"),
+			)
+		} else {
+			selectedComponent = args[0]
+		}
+		componentImageName, componentType, componentName, componentVersion := util.ParseCreateArgument(selectedComponent)
 
 		// Check to see if the catalog type actually exists
 		exists, err := catalog.Exists(client, componentType)
@@ -179,6 +192,26 @@ A full list of component types that can be deployed is available using: 'odo cat
 		checkError(err, "")
 		fmt.Printf("\nComponent '%s' is now set as active component.\n", componentName)
 	},
+}
+
+func componentCompleter(d prompt.Document) []prompt.Suggest {
+	client := getOcClient()
+	catalogList, err := catalog.List(client)
+	suggestions := make([]prompt.Suggest, 0)
+	if err == nil {
+		for _, service := range catalogList {
+			for _, tag := range service.Tags {
+				namespacePrefix := ""
+				if service.Namespace != occlient.OpenShiftNameSpace {
+					namespacePrefix = service.Namespace + "/"
+				}
+				displayName := namespacePrefix + service.Name + ":" + tag
+				suggestions = append(suggestions, prompt.Suggest{Text: displayName})
+			}
+		}
+	}
+	prompt.FilterHasPrefix(suggestions, d.GetWordBeforeCursor(), true)
+	return suggestions
 }
 
 func init() {

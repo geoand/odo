@@ -82,19 +82,19 @@ func ExtractComponentType(namespacedVersionedComponentType string) string {
 // 2. component type i.e, builder image name
 // 3. component name default value is component type else the user requested component name
 // 4. component version which is by default latest else version passed with builder image name
-func ParseCreateCmdArgs(args []string) (string, string, string, string) {
+func ParseCreateArgument(selectedComponent string) (string, string, string, string) {
 	// We don't have to check it anymore, Args check made sure that args has at least one item
 	// and no more than two
 
 	// "Default" values
-	componentImageName := args[0]
-	componentType := args[0]
+	componentImageName := selectedComponent
+	componentType := selectedComponent
 	componentName := ExtractComponentType(componentType)
 	componentVersion := "latest"
 
 	// Check if componentType includes ":", if so, then we need to spit it into using versions
 	if strings.ContainsAny(componentImageName, ":") {
-		versionSplit := strings.Split(args[0], ":")
+		versionSplit := strings.Split(selectedComponent, ":")
 		componentType = versionSplit[0]
 		componentName = ExtractComponentType(componentType)
 		componentVersion = versionSplit[1]

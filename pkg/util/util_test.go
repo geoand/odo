@@ -132,7 +132,7 @@ func TestParseCreateCmdArgs(t *testing.T) {
 	for _, tt := range tests {
 		t.Log("Running test: ", tt.testName)
 		t.Run(tt.testName, func(t *testing.T) {
-			got1, got2, got3, got4 := ParseCreateCmdArgs(tt.args)
+			got1, got2, got3, got4 := ParseCreateArgument(tt.args[0])
 			if tt.want1 != got1 {
 				t.Errorf("Expected imagename to be: %s, got %s", tt.want1, got1)
 			}
